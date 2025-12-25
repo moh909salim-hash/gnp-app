@@ -3,202 +3,157 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GNP v4 Pro — Protocol Enforcer + PDF Study (Single File)</title>
+  <title>GNP v4 Pro — Protocol Enforcer + PDF Study (MVP)</title>
 
-  <!-- pdf.js (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
+  <!-- PDF.js (stable) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // Worker must match version
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
 
   <style>
     :root{
-      --bg:#0b0c10; --panel:#11131a; --line:#2b2f3a; --line2:#394055;
-      --txt:#e6e6e6; --muted:rgba(230,230,230,.75);
-      --btn:#141827; --btn2:#0f1220;
+      --bg:#0b0c10; --card:#11131a; --card2:#0a0c14;
+      --text:#e6e6e6; --muted:#a6adbb; --line:#2b2f3a; --line2:#394055;
       --good:#7CFC90; --bad:#ff6b6b; --warn:#ffcc66;
-      --hl: rgba(255, 230, 120, .25);
     }
-    body{font-family:system-ui,-apple-system,Arial; margin:16px; background:var(--bg); color:var(--txt);}
-    h1,h2,h3{margin:0 0 8px 0}
-    .grid{display:grid; grid-template-columns: 1fr; gap:12px;}
-    @media(min-width: 980px){ .grid{grid-template-columns: 1.05fr .95fr;} }
-
-    .card{border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--panel);}
+    body{font-family:system-ui,-apple-system,Arial; margin:16px; background:var(--bg); color:var(--text);}
+    .card{border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card); margin-bottom:12px;}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .btn{border:1px solid var(--line2); background:var(--btn); color:var(--txt); padding:10px 12px; border-radius:12px; cursor:pointer}
+    .btn{border:1px solid var(--line2); background:#141827; color:var(--text); padding:10px 12px; border-radius:10px; cursor:pointer}
     .btn:disabled{opacity:.35; cursor:not-allowed}
-    .btn.ghost{background:transparent}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-    textarea,input,select{
-      width:100%; box-sizing:border-box; padding:10px; border-radius:12px;
-      border:1px solid var(--line2); background:var(--btn2); color:var(--txt)
-    }
+    textarea,input{width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid var(--line2); background:#0f1220; color:var(--text)}
     .small{opacity:.8; font-size:12px; color:var(--muted)}
-    .tag{padding:4px 10px; border:1px solid var(--line2); border-radius:999px; font-size:12px; opacity:.95}
+    .tag{padding:4px 8px; border:1px solid var(--line2); border-radius:999px; font-size:12px; opacity:.95}
     .bad{color:var(--bad)} .good{color:var(--good)} .warn{color:var(--warn)}
     .hide{display:none}
-    .log{max-height:220px; overflow:auto; background:#0a0c14; border-radius:12px; padding:10px; border:1px solid var(--line)}
+    .log{max-height:180px; overflow:auto; background:var(--card2); border-radius:10px; padding:10px; border:1px solid var(--line)}
     a{color:#9ecbff}
-
-    /* PDF viewer */
-    .pdfWrap{display:grid; grid-template-columns: 1fr; gap:10px;}
-    .pdfStage{
-      position:relative; border:1px solid var(--line); border-radius:14px;
-      background:#0a0c14; overflow:hidden;
-    }
-    canvas{display:block; width:100%; height:auto}
-    .overlay{
-      position:absolute; inset:0; pointer-events:none;
-    }
-    .hlBox{
-      position:absolute; background:var(--hl);
-      border:1px solid rgba(255,230,120,.5);
-      border-radius:6px;
-    }
-    .dragBox{
-      position:absolute; border:1px dashed rgba(255,230,120,.9);
-      background: rgba(255,230,120,.12);
-      border-radius:6px;
-    }
-    .split{
-      display:grid; grid-template-columns:1fr; gap:10px;
-    }
-    @media(min-width:980px){ .split{grid-template-columns: 1fr 1fr;} }
-
-    .kpi{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-    .kpi .tag{background:rgba(255,255,255,.03)}
+    .split{display:grid; grid-template-columns:1fr; gap:12px}
+    @media(min-width:980px){ .split{grid-template-columns: 1.1fr 0.9fr;} }
+    canvas{width:100%; height:auto; background:#000; border-radius:12px; border:1px solid var(--line)}
+    .pill{border:1px solid var(--line2); border-radius:999px; padding:6px 10px; background:#0f1220}
+    .hr{height:1px; background:var(--line); margin:10px 0}
+    .k{display:grid; grid-template-columns:1fr; gap:8px}
   </style>
 </head>
-
 <body>
 
-<div class="card">
-  <div class="row">
-    <div>
-      <div class="mono" style="font-size:16px;">GNP v4 PRO — Interview Edition</div>
-      <div class="small">Protocol Enforcer + PDF Study (Single File). كل شيء يُحفظ محليًا.</div>
-    </div>
-    <div style="margin-inline-start:auto" class="kpi">
-      <span class="tag mono" id="modeTag">MODE: IDLE</span>
-      <span class="tag mono" id="stepTag">STEP: -/-</span>
+  <!-- Header -->
+  <div class="card">
+    <div class="row">
+      <div>
+        <div class="mono" style="font-size:16px;">GNP v4 PRO — Interview Edition</div>
+        <div class="small">Protocol Enforcer + PDF Study (Personal MVP) — Locked 15-step sequence</div>
+      </div>
+      <div style="margin-inline-start:auto" class="row">
+        <span class="tag mono" id="modeTag">MODE: IDLE</span>
+        <span class="tag mono" id="stepTag">STEP: -/-</span>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="grid">
+  <div class="split">
 
-  <!-- LEFT: PDF STUDY -->
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <div>
-        <div class="mono">PDF STUDY</div>
-        <div class="small">رفع PDF، تصفح، تظليل بالمربعات، ملاحظات، وتصدير/استيراد.</div>
-      </div>
+    <!-- LEFT: PDF STUDY -->
+    <div class="card">
       <div class="row">
-        <button class="btn mono ghost" onclick="exportAll()">EXPORT ALL</button>
-        <button class="btn mono ghost" onclick="importAll()">IMPORT</button>
-        <button class="btn mono" onclick="clearAll()">CLEAR</button>
+        <div class="mono">PDF STUDY</div>
+        <span class="pill mono" id="pdfStatus">PDF: not loaded</span>
+        <span class="pill mono" id="pageInfo">PAGE: -/-</span>
       </div>
-    </div>
 
-    <div class="row" style="margin-top:10px">
-      <input id="pdfInput" type="file" accept="application/pdf" />
-      <button class="btn mono" onclick="loadSelectedPdf()">LOAD PDF</button>
-    </div>
+      <div class="hr"></div>
 
-    <div class="row" style="margin-top:10px">
-      <button class="btn mono" id="prevBtn" onclick="prevPage()" disabled>◀ PREV</button>
-      <button class="btn mono" id="nextBtn" onclick="nextPage()" disabled>NEXT ▶</button>
+      <div class="row">
+        <input id="pdfInput" type="file" accept="application/pdf" />
+        <button class="btn mono" id="loadPdfBtn">LOAD PDF</button>
+        <button class="btn mono" id="clearPdfBtn">CLEAR</button>
+      </div>
 
-      <span class="tag mono" id="pageTag">PAGE: -/-</span>
+      <div class="row" style="margin-top:8px">
+        <button class="btn mono" id="prevPageBtn" disabled>PREV</button>
+        <button class="btn mono" id="nextPageBtn" disabled>NEXT</button>
+        <button class="btn mono" id="toggleHighlightBtn" disabled>DRAW HIGHLIGHT: OFF</button>
+        <button class="btn mono" id="clearHighlightsBtn" disabled>CLEAR HIGHLIGHTS</button>
+      </div>
 
-      <label class="tag mono" style="display:flex; gap:8px; align-items:center; cursor:pointer;">
-        <input type="checkbox" id="drawToggle" onchange="setDrawMode(this.checked)" />
-        DRAW HIGHLIGHT
-      </label>
-
-      <button class="btn mono" id="extractBtn" onclick="extractPageTextToStep3()" disabled>SEND PAGE TEXT → STEP 3</button>
-    </div>
-
-    <div class="pdfWrap" style="margin-top:10px">
-      <div class="pdfStage" id="pdfStage">
+      <div style="margin-top:10px">
         <canvas id="pdfCanvas"></canvas>
-        <div class="overlay" id="overlay"></div>
       </div>
 
-      <div class="split">
-        <div class="card" style="background:transparent; border-color:var(--line)">
+      <div class="hr"></div>
+
+      <div class="k">
+        <div>
           <div class="mono">HIGHLIGHTS (THIS PAGE)</div>
-          <div class="small">اضغط على هايلايت لحذف/تعديل ملاحظته.</div>
-          <div id="hlList" class="small" style="margin-top:10px"></div>
+          <div class="small">تسحب بإصبعك على الصفحة لعمل Highlight (إذا ON). محفوظ محليًا.</div>
+          <div class="log mono" id="hlList" style="margin-top:8px"></div>
         </div>
-        <div class="card" style="background:transparent; border-color:var(--line)">
+
+        <div>
           <div class="mono">PAGE NOTES</div>
-          <textarea id="pageNote" rows="7" placeholder="ملاحظات الصفحة (تُحفظ تلقائيًا)..."></textarea>
-          <div class="row" style="margin-top:10px">
-            <button class="btn mono" onclick="savePageNote()">SAVE NOTE</button>
+          <textarea id="pageNotes" rows="4" placeholder="ملاحظات هذه الصفحة..."></textarea>
+          <div class="row" style="margin-top:8px">
+            <button class="btn mono" id="saveNoteBtn" disabled>SAVE NOTE</button>
             <span class="small" id="noteMsg"></span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="small" style="margin-top:10px">
-      التظليل هنا **مربعات** (Drag). هذا أسهل وأثبت على الجوال. نقدر لاحقًا نطوره لتظليل نصّي دقيق.
-    </div>
-  </div>
+    <!-- RIGHT: GNP ENFORCER -->
+    <div>
+      <div class="card">
+        <div class="row">
+          <button class="btn mono" onclick="handleCmd('READY')">READY</button>
+          <button class="btn mono" onclick="handleCmd('STOP')">STOP</button>
+          <button class="btn mono" onclick="handleCmd('TEST ME')">TEST ME</button>
+          <button class="btn mono" onclick="handleCmd('SCENARIO DRILL')">SCENARIO DRILL</button>
+          <button class="btn mono" onclick="exportLog()">EXPORT LOG</button>
+          <button class="btn mono" onclick="hardReset()">HARD RESET</button>
+        </div>
 
-  <!-- RIGHT: GNP ENFORCER -->
-  <div>
-    <div class="card">
-      <div class="row">
-        <button class="btn mono" onclick="handleCmd('READY')">READY</button>
-        <button class="btn mono" onclick="handleCmd('STOP')">STOP</button>
-        <button class="btn mono" onclick="handleCmd('TEST ME')">TEST ME</button>
-        <button class="btn mono" onclick="handleCmd('SCENARIO DRILL')">SCENARIO DRILL</button>
-        <button class="btn mono" onclick="exportLog()">EXPORT LOG</button>
-        <button class="btn mono" onclick="hardReset()">HARD RESET</button>
+        <div style="margin-top:10px" class="row">
+          <input id="cmdInput" class="mono" placeholder="أمر: OVERRIDE 5 | RESET 3" />
+          <button class="btn mono" onclick="execInputCmd()">EXEC</button>
+        </div>
+        <div class="small">OVERRIDE/RESET مسموحة فقط مع تسجيل إلزامي في السجل.</div>
       </div>
 
-      <div style="margin-top:10px" class="row">
-        <input id="cmdInput" class="mono" placeholder="اكتب أمر: OVERRIDE 5 | RESET 3" />
-        <button class="btn mono" onclick="execInputCmd()">EXEC</button>
-      </div>
-      <div class="small">OVERRIDE/RESET مسموحة فقط مع تسجيل إلزامي في السجل.</div>
-    </div>
+      <div class="card hide" id="stepCard">
+        <div class="row">
+          <div class="mono" id="stepTitle" style="font-size:16px;"></div>
+          <div style="margin-inline-start:auto" class="row">
+            <span class="tag mono" id="timerTag">T: --</span>
+            <span class="tag mono" id="wordsTag">W: 0/0</span>
+          </div>
+        </div>
 
-    <div class="card hide" id="stepCard">
-      <div class="row">
-        <div class="mono" id="stepTitle" style="font-size:16px;"></div>
-        <div style="margin-inline-start:auto" class="row">
-          <span class="tag mono" id="timerTag">T: --</span>
-          <span class="tag mono" id="wordsTag">W: 0/0</span>
+        <div style="margin-top:10px" id="promptText" class="mono"></div>
+        <div class="small" style="margin-top:8px">Encoding required in Output: <span class="mono">V: A: K: E: S:</span></div>
+
+        <div style="margin-top:10px" class="row">
+          <textarea id="answer" rows="5" placeholder="اكتب Output هنا (مطلوب)."></textarea>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btn mono" id="submitBtn" onclick="submitOutput()">SUBMIT OUTPUT</button>
+          <span id="statusMsg" class="small"></span>
         </div>
       </div>
 
-      <div style="margin-top:10px" id="promptText"></div>
-      <div class="small" style="margin-top:8px">Encoding required: Visual / Auditory / Kinesthetic / Emotional + Scenario Anchor</div>
-
-      <div style="margin-top:10px" class="row">
-        <textarea id="answer" rows="6" placeholder="اكتب Output هنا (مطلوب)."></textarea>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <button class="btn mono" id="submitBtn" onclick="submitOutput()">SUBMIT OUTPUT</button>
-        <span id="statusMsg" class="small"></span>
-      </div>
-
-      <div class="small" style="margin-top:10px">
-        تلميح: لازم داخل Output تكتب: <span class="mono">V: A: K: E: S:</span>
+      <div class="card">
+        <div class="mono">AUDIT LOG</div>
+        <div class="small">كل أمر/خطوة/وقت/مخرجات تُسجل.</div>
+        <div class="log mono" id="logBox" style="margin-top:10px"></div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="mono">AUDIT LOG</div>
-      <div class="small">كل أمر/خطوة/انتهاء وقت يُسجل دائمًا.</div>
-      <div class="log mono" id="logBox" style="margin-top:10px"></div>
-    </div>
   </div>
-
-</div>
 
 <script>
 /* =========================
@@ -207,48 +162,48 @@
 const STEPS = [
   {n:1,  t:"Neuro-Priming Start",       w:60,  sec:60,  mod:["Visual","Emotional"]},
   {n:2,  t:"Scope Lock",                w:50,  sec:45,  mod:["Auditory","Emotional"]},
-  {n:3,  t:"Raw Facts Extraction",      w:120, sec:120, mod:["Visual"]},
-  {n:4,  t:"3-2-1 Cutoff",              w:60,  sec:60,  mod:["Kinesthetic"]},
-  {n:5,  t:"Risk & Control Mapping",    w:110, sec:140, mod:["Visual","Kinesthetic"]},
-  {n:6,  t:"Roles & Accountability",    w:90,  sec:110, mod:["Auditory"]},
-  {n:7,  t:"Failure Modes",             w:100, sec:120, mod:["Visual"]},
-  {n:8,  t:"Zeigarnik Questions",       w:80,  sec:80,  mod:["Emotional"]},
-  {n:9,  t:"Memory Palace Anchors",     w:90,  sec:100, mod:["Visual","Kinesthetic"]},
-  {n:10, t:"Interview Q&A (Hard)",      w:100, sec:120, mod:["Auditory","Emotional"]},
-  {n:11, t:"Field Execution Checklist", w:120, sec:130, mod:["Kinesthetic"]},
-  {n:12, t:"Red Flags / Stop-Work",     w:90,  sec:90,  mod:["Emotional"]},
-  {n:13, t:"Micro-Test ضغط",            w:60,  sec:60,  mod:["Auditory"]},
-  {n:14, t:"Error Log (Anti-Repeat)",   w:90,  sec:90,  mod:["Visual","Emotional"]},
-  {n:15, t:"60-Second Closure",         w:70,  sec:70,  mod:["Auditory","Kinesthetic"]},
+  {n:3,  t:"Raw Facts Extraction",      w:80,  sec:90,  mod:["Visual"]},
+  {n:4,  t:"3-2-1 Cutoff",              w:45,  sec:45,  mod:["Kinesthetic"]},
+  {n:5,  t:"Risk & Control Mapping",    w:90,  sec:120, mod:["Visual","Kinesthetic"]},
+  {n:6,  t:"Roles & Accountability",    w:70,  sec:90,  mod:["Auditory"]},
+  {n:7,  t:"Failure Modes",             w:80,  sec:90,  mod:["Visual"]},
+  {n:8,  t:"Zeigarnik Questions",       w:60,  sec:60,  mod:["Emotional"]},
+  {n:9,  t:"Memory Palace Anchors",     w:60,  sec:75,  mod:["Visual","Kinesthetic"]},
+  {n:10, t:"Interview Q&A (Hard)",      w:80,  sec:90,  mod:["Auditory","Emotional"]},
+  {n:11, t:"Field Execution Checklist", w:80,  sec:90,  mod:["Kinesthetic"]},
+  {n:12, t:"Red Flags / Stop-Work",     w:60,  sec:60,  mod:["Emotional"]},
+  {n:13, t:"Micro-Test ضغط",            w:40,  sec:40,  mod:["Auditory"]},
+  {n:14, t:"Error Log (Anti-Repeat)",   w:70,  sec:60,  mod:["Visual","Emotional"]},
+  {n:15, t:"60-Second Closure",         w:45,  sec:60,  mod:["Auditory","Kinesthetic"]},
 ];
 
 const PROMPTS = {
-  1:"ادخل وضع READY: صف 1 صورة + 1 شعور + 1 سبب. (Encoding كامل).",
-  2:"اقفل النطاق: 3 حقائق + 2 خيارات + 1 خطوة الآن. (3-2-1).",
-  3:"استخرج حقائق خام: نقاط فقط بدون تفسير. (يمكنك سحب نص صفحة PDF هنا).",
-  4:"طبّق 3-2-1 على ما سبق: (3 Facts / 2 Options / 1 Next).",
-  5:"خريطة مخاطر: Hazard → Risk → Controls (Top 5).",
-  6:"RACI مصغر: Who does what + accountability.",
-  7:"Failure modes: كيف يفشل النظام؟ (5 طرق).",
-  8:"Zeigarnik: اكتب أسئلة معلّقة لا تعرف جوابها.",
-  9:"Memory Palace: اربط 3 نقاط بمكان/ممر/علامة.",
-  10:"Q&A صعب: سؤال + جواب مختصر + دليل واحد.",
-  11:"Checklist: خطوات تنفيذ ميداني (10 بنود).",
-  12:"Stop-Work triggers: 5 إشارات حمراء توقف عندها فورًا.",
-  13:"Micro-test: استرجاع 5 نقاط خلال الوقت فقط.",
-  14:"Error log: خطأ واحد + سبب + قاعدة منع تكرار.",
-  15:"Closure: 60 ثانية — 3 حقائق / 2 ثغرات / 1 خطة غد.",
+  1:"Step 1: اكتب Output فيه V/A/K/E/S. مثال: V:.. A:.. K:.. E:.. S:..",
+  2:"Step 2: اقفل النطاق: 3 حقائق + 2 خيارات + 1 خطوة الآن. ثم V/A/K/E/S.",
+  3:"Step 3: حقائق خام من النص (نقاط فقط). ثم V/A/K/E/S.",
+  4:"Step 4: طبّق 3-2-1 Cutoff على ما سبق. ثم V/A/K/E/S.",
+  5:"Step 5: Hazard → Risk → Controls (Top 5). ثم V/A/K/E/S.",
+  6:"Step 6: RACI مصغّر: من يفعل ماذا؟ ثم V/A/K/E/S.",
+  7:"Step 7: Failure modes (5 طرق فشل). ثم V/A/K/E/S.",
+  8:"Step 8: Zeigarnik: أسئلة معلّقة لا تعرف جوابها. ثم V/A/K/E/S.",
+  9:"Step 9: Memory Palace: اربط 3 نقاط بمكان/علامة. ثم V/A/K/E/S.",
+  10:"Step 10: سؤال مقابلة صعب + جواب مختصر + دليل واحد. ثم V/A/K/E/S.",
+  11:"Step 11: Checklist ميداني (10 بنود). ثم V/A/K/E/S.",
+  12:"Step 12: 5 Stop-Work triggers. ثم V/A/K/E/S.",
+  13:"Step 13: Micro-test: استرجاع 5 نقاط بسرعة. ثم V/A/K/E/S.",
+  14:"Step 14: خطأ واحد + سبب + قاعدة منع تكرار. ثم V/A/K/E/S.",
+  15:"Step 15: Closure: 3 حقائق / 2 ثغرات / 1 خطة غد. ثم V/A/K/E/S.",
 };
 
 let state = loadState() || {
   mode: "IDLE",
   i: -1,
-  locked: true,
   startedAt: null,
   stepStartedAt: null,
   timeLeft: 0,
   log: []
 };
+
 let timer = null;
 
 const modeTag = document.getElementById("modeTag");
@@ -266,15 +221,17 @@ const logBox = document.getElementById("logBox");
 renderAll();
 
 function handleCmd(cmdRaw){
-  const cmd = (cmdRaw||"").trim().toUpperCase();
+  const cmd = cmdRaw.trim().toUpperCase();
+
   if(cmd === "READY"){ startRun(); return; }
   if(cmd === "STOP"){ stopRun(); return; }
+
   if(cmd === "TEST ME"){
     state.mode = "TEST";
     logEvent("COMMAND","TEST ME",{});
-    saveState(); renderAll();
-    return;
+    saveState(); renderAll(); return;
   }
+
   if(cmd === "SCENARIO DRILL"){
     state.mode = "SCENARIO";
     if(state.i < 0) state.i = 0;
@@ -282,24 +239,29 @@ function handleCmd(cmdRaw){
     startStep(state.i);
     return;
   }
+
   if(cmd.startsWith("OVERRIDE")){
     const n = parseInt(cmd.split(/\s+/)[1],10);
     if(Number.isFinite(n) && n>=1 && n<=15){
       logEvent("OVERRIDE",`TO_STEP_${n}`,{reason:"manual"});
-      state.i = n-1; state.mode = "RUN";
+      state.i = n-1;
+      state.mode = "RUN";
       startStep(state.i);
     }
     return;
   }
+
   if(cmd.startsWith("RESET")){
     const n = parseInt(cmd.split(/\s+/)[1],10);
     if(Number.isFinite(n) && n>=1 && n<=15){
       logEvent("RESET",`STEP_${n}`,{});
-      state.i = n-1; state.mode = "RUN";
+      state.i = n-1;
+      state.mode = "RUN";
       startStep(state.i);
     }
     return;
   }
+
   logEvent("COMMAND_UNKNOWN",cmd,{});
   saveState(); renderAll();
 }
@@ -342,7 +304,9 @@ function tick(){
   clearTimer();
   timer = setInterval(()=>{
     if(state.mode === "PAUSED" || state.mode === "IDLE") return;
+
     state.timeLeft -= 1;
+
     if(state.timeLeft <= 0){
       state.timeLeft = 0;
       clearTimer();
@@ -351,7 +315,7 @@ function tick(){
       renderAll();
 
       if(state.mode === "SCENARIO"){
-        if(state.i < 14) startStep(state.i+1);
+        if(state.i < 14){ startStep(state.i+1); }
         else {
           state.mode = "IDLE";
           logEvent("SCENARIO_END","DONE",{});
@@ -371,24 +335,33 @@ function tick(){
 function submitOutput(){
   const txt = (answer.value || "").trim();
   if(!txt){ statusMsg.innerHTML = `<span class="bad">Output فارغ. ممنوع.</span>`; return; }
-  const step = STEPS[state.i];
 
+  const step = STEPS[state.i];
   const wc = wordCount(txt);
-  if(wc > step.w){ statusMsg.innerHTML = `<span class="bad">تجاوزت حد الكلمات (${wc}/${step.w}). قصّ النص.</span>`; return; }
-  if(state.timeLeft <= 0 && state.mode !== "SCENARIO"){ statusMsg.innerHTML = `<span class="bad">الوقت انتهى. RESET أو OVERRIDE.</span>`; return; }
+
+  if(wc > step.w){
+    statusMsg.innerHTML = `<span class="bad">تجاوزت حد الكلمات (${wc}/${step.w}).</span>`;
+    return;
+  }
+
+  if(state.timeLeft <= 0 && state.mode !== "SCENARIO"){
+    statusMsg.innerHTML = `<span class="bad">الوقت انتهى. RESET أو OVERRIDE.</span>`;
+    return;
+  }
 
   const needs = ["V:","A:","K:","E:","S:"];
-  const missing = needs.filter(k => !txt.toUpperCase().includes(k));
+  const up = txt.toUpperCase();
+  const missing = needs.filter(k => !up.includes(k));
   if(missing.length){
-    statusMsg.innerHTML = `<span class="bad">Encoding ناقص. لازم داخل Output: V: A: K: E: S:</span>`;
+    statusMsg.innerHTML = `<span class="bad">Encoding ناقص. لازم: V: A: K: E: S:</span>`;
     return;
   }
 
   logEvent("STEP_OUTPUT",`STEP_${step.n}`,{text: txt, words: wc, timeUsed: step.sec - state.timeLeft});
   answer.value = "";
-  statusMsg.innerHTML = `<span class="good">تم حفظ الـOutput. فتح التالي.</span>`;
+  statusMsg.innerHTML = `<span class="good">تم. فتح التالي.</span>`;
 
-  if(state.i < 14) startStep(state.i+1);
+  if(state.i < 14){ startStep(state.i+1); }
   else {
     clearTimer();
     logEvent("SESSION_COMPLETE","DONE",{});
@@ -399,7 +372,7 @@ function submitOutput(){
   }
 }
 
-function renderAll(full=true){
+function renderAll(){
   modeTag.textContent = `MODE: ${state.mode}`;
   stepTag.textContent = state.i>=0 ? `STEP: ${state.i+1}/15` : `STEP: -/-`;
 
@@ -409,7 +382,7 @@ function renderAll(full=true){
     stepTitle.textContent = `Step ${step.n}: ${step.t}  [${step.mod.join(", ")}]`;
     promptText.textContent = PROMPTS[step.n] || "";
     timerTag.textContent = `T: ${state.timeLeft}s`;
-    wordsTag.textContent = `W: ${wordCount(answer.value||"")}/${step.w}`;
+    wordsTag.textContent = `W: 0/${step.w}`;
     submitBtn.disabled = (state.mode==="PAUSED" || state.mode==="IDLE");
   } else {
     stepCard.classList.add("hide");
@@ -425,423 +398,264 @@ answer.addEventListener("input", ()=>{
 });
 
 function renderLog(){
-  const lines = state.log.slice(-60).map(e => `[${e.ts}] ${e.type} ${e.name} ${e.data?JSON.stringify(e.data):""}`);
+  const lines = state.log.slice(-50).map(e=>{
+    return `[${e.ts}] ${e.type} ${e.name} ${e.data?JSON.stringify(e.data):""}`;
+  });
   logBox.textContent = lines.join("\n");
 }
 
 function logEvent(type,name,data){ state.log.push({ts:new Date().toISOString(), type, name, data}); }
 function saveState(){ localStorage.setItem("GNPv4_STATE", JSON.stringify(state)); }
-function loadState(){ try{ const s = localStorage.getItem("GNPv4_STATE"); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function loadState(){ try{ const s=localStorage.getItem("GNPv4_STATE"); return s?JSON.parse(s):null; }catch(e){ return null; } }
 function exportLog(){
   const blob = new Blob([JSON.stringify(state.log,null,2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href=url; a.download="gnp_audit_log.json"; a.click();
+  const a = document.createElement("a");
+  a.href = url; a.download = "gnp_audit_log.json"; a.click();
   URL.revokeObjectURL(url);
 }
 function hardReset(){
-  if(!confirm("HARD RESET يمسح كل شيء (state + log + pdf data). موافق؟")) return;
+  if(!confirm("HARD RESET يمسح كل شيء. موافق؟")) return;
   clearTimer();
   localStorage.removeItem("GNPv4_STATE");
-  localStorage.removeItem("PDF_STUDY_STATE");
-  state = {mode:"IDLE", i:-1, locked:true, startedAt:null, stepStartedAt:null, timeLeft:0, log:[]};
-  resetPdfStateOnly();
+  state = {mode:"IDLE", i:-1, startedAt:null, stepStartedAt:null, timeLeft:0, log:[]};
   renderAll();
 }
 function clearTimer(){ if(timer){ clearInterval(timer); timer=null; } }
 function wordCount(t){ return (t||"").trim().split(/\s+/).filter(Boolean).length; }
 
 /* =========================
-   PDF STUDY (pdf.js)
-   - Load PDF (stored in IndexedDB? no; we store in memory + study state in localStorage)
-   - Highlights as rectangles in page coords
-   - Page notes
+   PDF STUDY (iOS-friendly)
 ========================= */
-
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+let pdfDoc = null;
+let currentPage = 1;
+let rendering = false;
+let highlightMode = false;
+let pageScale = 1.35;
 
 const pdfInput = document.getElementById("pdfInput");
-const pdfCanvas = document.getElementById("pdfCanvas");
-const pdfStage = document.getElementById("pdfStage");
-const overlay = document.getElementById("overlay");
-const pageTag = document.getElementById("pageTag");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const extractBtn = document.getElementById("extractBtn");
+const loadPdfBtn = document.getElementById("loadPdfBtn");
+const clearPdfBtn = document.getElementById("clearPdfBtn");
+const prevBtn = document.getElementById("prevPageBtn");
+const nextBtn = document.getElementById("nextPageBtn");
+const toggleHLBtn = document.getElementById("toggleHighlightBtn");
+const clearHLBtn = document.getElementById("clearHighlightsBtn");
+
+const pdfStatus = document.getElementById("pdfStatus");
+const pageInfo = document.getElementById("pageInfo");
+const canvas = document.getElementById("pdfCanvas");
+const ctx = canvas.getContext("2d");
+
 const hlList = document.getElementById("hlList");
-const pageNote = document.getElementById("pageNote");
+const pageNotes = document.getElementById("pageNotes");
+const saveNoteBtn = document.getElementById("saveNoteBtn");
 const noteMsg = document.getElementById("noteMsg");
-const drawToggle = document.getElementById("drawToggle");
 
-let pdfDoc = null;
-let pdfBytes = null;
-let view = {
-  page: 1,
-  pages: 0,
-  scale: 1.2,
-  viewport: null,
-  rendering: false,
-  drawMode: false,
-  drag: null
-};
+function keyHL(p){ return `GNP_HL_${p}`; }
+function keyNote(p){ return `GNP_NOTE_${p}`; }
 
-let pdfStudy = loadPdfStudyState() || {
-  // key: pageNumber => { note: "", highlights: [{id,x,y,w,h,note}] } coordinates in viewport units (unscaled base = 1.0)
-  docName: "",
-  pages: {}
-};
-
-function loadPdfStudyState(){
-  try{
-    const s = localStorage.getItem("PDF_STUDY_STATE");
-    return s ? JSON.parse(s) : null;
-  }catch(e){ return null; }
+function getHighlights(p){
+  try{ return JSON.parse(localStorage.getItem(keyHL(p))||"[]"); }catch(e){ return []; }
 }
-function savePdfStudyState(){ localStorage.setItem("PDF_STUDY_STATE", JSON.stringify(pdfStudy)); }
+function setHighlights(p,arr){ localStorage.setItem(keyHL(p), JSON.stringify(arr||[])); }
+function loadNote(p){ pageNotes.value = localStorage.getItem(keyNote(p)) || ""; }
+function saveNote(p){ localStorage.setItem(keyNote(p), pageNotes.value || ""); }
 
-function resetPdfStateOnly(){
-  pdfDoc = null; pdfBytes = null;
-  view.page = 1; view.pages = 0;
-  overlay.innerHTML = "";
-  pageTag.textContent = "PAGE: -/-";
-  prevBtn.disabled = true; nextBtn.disabled = true;
-  extractBtn.disabled = true;
-  hlList.innerHTML = "";
-  pageNote.value = "";
-  noteMsg.textContent = "";
+function setPdfUiEnabled(on){
+  prevBtn.disabled = !on;
+  nextBtn.disabled = !on;
+  toggleHLBtn.disabled = !on;
+  clearHLBtn.disabled = !on;
+  saveNoteBtn.disabled = !on;
 }
 
-function loadSelectedPdf(){
-  const f = pdfInput.files && pdfInput.files[0];
-  if(!f){ alert("اختر ملف PDF أولاً."); return; }
-  const reader = new FileReader();
-  reader.onload = async () => {
-    pdfBytes = new Uint8Array(reader.result);
-    await openPdfBytes(pdfBytes, f.name);
-  };
-  reader.readAsArrayBuffer(f);
+function updatePdfLabels(){
+  const total = pdfDoc ? pdfDoc.numPages : "-";
+  pageInfo.textContent = `PAGE: ${pdfDoc ? currentPage : "-"} / ${total}`;
+  pdfStatus.textContent = pdfDoc ? "PDF: loaded" : "PDF: not loaded";
 }
 
-async function openPdfBytes(bytes, name){
-  try{
-    pdfDoc = await pdfjsLib.getDocument({data: bytes}).promise;
-    view.pages = pdfDoc.numPages;
-    view.page = 1;
+async function renderPage(p){
+  if(!pdfDoc || rendering) return;
+  rendering = true;
 
-    pdfStudy.docName = name || "PDF";
-    if(!pdfStudy.pages) pdfStudy.pages = {};
-    savePdfStudyState();
+  const page = await pdfDoc.getPage(p);
+  const viewport = page.getViewport({ scale: pageScale });
 
-    prevBtn.disabled = false;
-    nextBtn.disabled = false;
-    extractBtn.disabled = false;
-
-    await renderPage();
-  }catch(e){
-    console.error(e);
-    alert("فشل فتح PDF. جرّب ملف آخر أو تأكد أن الانترنت شغال أول مرة (pdf.js).");
-  }
-}
-
-function fitScaleToWidth(viewport){
-  // Keep canvas crisp; we scale by devicePixelRatio
-  const stageW = pdfStage.clientWidth || 1;
-  const desired = stageW / viewport.width;
-  return Math.max(0.8, Math.min(2.2, desired));
-}
-
-async function renderPage(){
-  if(!pdfDoc || view.rendering) return;
-  view.rendering = true;
-
-  const page = await pdfDoc.getPage(view.page);
-  const baseViewport = page.getViewport({scale: 1});
-  const scale = fitScaleToWidth(baseViewport);
-  const viewport = page.getViewport({scale});
-  view.viewport = viewport;
-  view.scale = scale;
-
-  const ctx = pdfCanvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
-  pdfCanvas.width = Math.floor(viewport.width * dpr);
-  pdfCanvas.height = Math.floor(viewport.height * dpr);
-  pdfCanvas.style.width = viewport.width + "px";
-  pdfCanvas.style.height = viewport.height + "px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  overlay.style.width = viewport.width + "px";
-  overlay.style.height = viewport.height + "px";
-  overlay.innerHTML = "";
-
-  pageTag.textContent = `PAGE: ${view.page}/${view.pages}`;
+  canvas.width = Math.floor(viewport.width);
+  canvas.height = Math.floor(viewport.height);
 
   await page.render({canvasContext: ctx, viewport}).promise;
 
-  // Restore page note + highlights
-  loadCurrentPageNote();
-  drawHighlights();
+  // draw highlights
+  const hls = getHighlights(currentPage);
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = "#ffe066";
+  hls.forEach(r=>{
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+  });
+  ctx.restore();
 
-  view.rendering = false;
+  renderHlList();
+  loadNote(currentPage);
+  noteMsg.textContent = "";
+
+  updatePdfLabels();
+  rendering = false;
 }
 
-function prevPage(){ if(!pdfDoc) return; if(view.page>1){ view.page--; renderPage(); } }
-function nextPage(){ if(!pdfDoc) return; if(view.page<view.pages){ view.page++; renderPage(); } }
-
-function setDrawMode(on){
-  view.drawMode = !!on;
+function renderHlList(){
+  const hls = getHighlights(currentPage);
+  if(!hls.length){ hlList.textContent = "(no highlights)"; return; }
+  hlList.textContent = hls.map((r,i)=>`#${i+1} x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.w)} h:${Math.round(r.h)}`).join("\n");
 }
 
-function ensurePageBucket(p){
-  if(!pdfStudy.pages[p]) pdfStudy.pages[p] = {note:"", highlights:[]};
-  if(!pdfStudy.pages[p].highlights) pdfStudy.pages[p].highlights = [];
-  if(typeof pdfStudy.pages[p].note !== "string") pdfStudy.pages[p].note = "";
-}
+loadPdfBtn.addEventListener("click", async ()=>{
+  try{
+    const file = pdfInput.files?.[0];
+    if(!file){ alert("اختار ملف PDF أول."); return; }
 
-function loadCurrentPageNote(){
-  ensurePageBucket(view.page);
-  pageNote.value = pdfStudy.pages[view.page].note || "";
-  renderHighlightList();
-}
+    // iOS-friendly: arrayBuffer
+    const buf = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({data: buf}).promise;
+    currentPage = 1;
 
-function savePageNote(){
-  if(!pdfDoc) { noteMsg.innerHTML = `<span class="warn">حمّل PDF أولاً.</span>`; return; }
-  ensurePageBucket(view.page);
-  pdfStudy.pages[view.page].note = pageNote.value || "";
-  savePdfStudyState();
-  noteMsg.innerHTML = `<span class="good">تم الحفظ.</span>`;
-  setTimeout(()=> noteMsg.textContent = "", 1200);
-}
+    setPdfUiEnabled(true);
+    highlightMode = false;
+    toggleHLBtn.textContent = "DRAW HIGHLIGHT: OFF";
 
-pageNote.addEventListener("input", ()=>{
-  if(!pdfDoc) return;
-  ensurePageBucket(view.page);
-  pdfStudy.pages[view.page].note = pageNote.value || "";
-  savePdfStudyState();
+    logEvent("PDF","LOAD",{name:file.name, pages: pdfDoc.numPages});
+    saveState();
+
+    await renderPage(currentPage);
+  }catch(e){
+    console.error(e);
+    alert("فشل تحميل PDF. السبب غالبًا: pdfjs/worker. (تم طباعة الخطأ في console)");
+    logEvent("PDF_ERROR","LOAD_FAIL",{err:String(e)});
+    saveState();
+  }
 });
 
-function rectToCss(r){
-  // r stored in viewport units (CSS px at current render scale)
-  const el = document.createElement("div");
-  el.className = "hlBox";
-  el.style.left = r.x + "px";
-  el.style.top = r.y + "px";
-  el.style.width = r.w + "px";
-  el.style.height = r.h + "px";
-  return el;
-}
+clearPdfBtn.addEventListener("click", ()=>{
+  pdfDoc = null;
+  currentPage = 1;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  setPdfUiEnabled(false);
+  updatePdfLabels();
+  hlList.textContent = "";
+  pageNotes.value = "";
+  noteMsg.textContent = "";
+  highlightMode = false;
+  toggleHLBtn.textContent = "DRAW HIGHLIGHT: OFF";
+  logEvent("PDF","CLEAR",{});
+  saveState();
+});
 
-function drawHighlights(){
-  if(!pdfDoc || !view.viewport) return;
-  ensurePageBucket(view.page);
-  overlay.innerHTML = "";
-  const hs = pdfStudy.pages[view.page].highlights || [];
-  hs.forEach(h => overlay.appendChild(rectToCss(h)));
-  renderHighlightList();
-}
+nextBtn.addEventListener("click", async ()=>{
+  if(!pdfDoc) return;
+  if(currentPage >= pdfDoc.numPages) return;
+  currentPage++;
+  await renderPage(currentPage);
+});
 
-function renderHighlightList(){
-  if(!pdfDoc){ hlList.innerHTML = `<span class="warn">حمّل PDF.</span>`; return; }
-  ensurePageBucket(view.page);
-  const hs = pdfStudy.pages[view.page].highlights || [];
-  if(!hs.length){
-    hlList.innerHTML = `<span class="small">لا يوجد تظليل في هذه الصفحة.</span>`;
-    return;
-  }
-  hlList.innerHTML = "";
-  hs.slice().reverse().forEach(h=>{
-    const wrap = document.createElement("div");
-    wrap.style.padding = "8px";
-    wrap.style.border = "1px solid var(--line)";
-    wrap.style.borderRadius = "12px";
-    wrap.style.marginBottom = "8px";
-    wrap.style.background = "rgba(255,255,255,.02)";
-    wrap.innerHTML = `
-      <div class="row" style="justify-content:space-between">
-        <span class="mono">HL#${h.id}</span>
-        <span class="small">x:${Math.round(h.x)} y:${Math.round(h.y)} w:${Math.round(h.w)} h:${Math.round(h.h)}</span>
-      </div>
-      <textarea rows="2" class="mono" placeholder="ملاحظة لهذا التظليل...">${escapeHtml(h.note||"")}</textarea>
-      <div class="row" style="margin-top:8px">
-        <button class="btn mono ghost">DELETE</button>
-      </div>
-    `;
-    const ta = wrap.querySelector("textarea");
-    const del = wrap.querySelector("button");
-    ta.addEventListener("input", ()=>{
-      h.note = ta.value || "";
-      savePdfStudyState();
-    });
-    del.addEventListener("click", ()=>{
-      pdfStudy.pages[view.page].highlights = (pdfStudy.pages[view.page].highlights||[]).filter(x=>x.id!==h.id);
-      savePdfStudyState();
-      drawHighlights();
-    });
-    hlList.appendChild(wrap);
-  });
-}
+prevBtn.addEventListener("click", async ()=>{
+  if(!pdfDoc) return;
+  if(currentPage <= 1) return;
+  currentPage--;
+  await renderPage(currentPage);
+});
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
+toggleHLBtn.addEventListener("click", ()=>{
+  if(!pdfDoc) return;
+  highlightMode = !highlightMode;
+  toggleHLBtn.textContent = highlightMode ? "DRAW HIGHLIGHT: ON" : "DRAW HIGHLIGHT: OFF";
+});
 
-/* Drag highlight (mouse/touch) */
-function getLocalPoint(evt){
-  const rect = pdfStage.getBoundingClientRect();
-  const touch = evt.touches && evt.touches[0];
-  const clientX = touch ? touch.clientX : evt.clientX;
-  const clientY = touch ? touch.clientY : evt.clientY;
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
-  return {x, y};
-}
+clearHLBtn.addEventListener("click", ()=>{
+  if(!pdfDoc) return;
+  setHighlights(currentPage, []);
+  renderPage(currentPage);
+});
 
-function clampRect(r){
-  const w = view.viewport ? view.viewport.width : 0;
-  const h = view.viewport ? view.viewport.height : 0;
-  const x1 = Math.max(0, Math.min(w, r.x1));
-  const y1 = Math.max(0, Math.min(h, r.y1));
-  const x2 = Math.max(0, Math.min(w, r.x2));
-  const y2 = Math.max(0, Math.min(h, r.y2));
-  return {x1,y1,x2,y2};
+saveNoteBtn.addEventListener("click", ()=>{
+  if(!pdfDoc) return;
+  saveNote(currentPage);
+  noteMsg.innerHTML = `<span class="good">Saved.</span>`;
+});
+
+let drag = null;
+
+function getPos(evt){
+  const rect = canvas.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+  // map to canvas pixels
+  const x = (clientX - rect.left) * (canvas.width / rect.width);
+  const y = (clientY - rect.top) * (canvas.height / rect.height);
+  return {x,y};
 }
 
 function startDrag(evt){
-  if(!pdfDoc || !view.drawMode) return;
+  if(!highlightMode || !pdfDoc) return;
   evt.preventDefault();
-  const p = getLocalPoint(evt);
-  view.drag = {x1:p.x, y1:p.y, x2:p.x, y2:p.y, el:null};
-  const el = document.createElement("div");
-  el.className = "dragBox";
-  el.style.left = p.x + "px";
-  el.style.top = p.y + "px";
-  el.style.width = "1px";
-  el.style.height = "1px";
-  overlay.appendChild(el);
-  view.drag.el = el;
+  const p = getPos(evt);
+  drag = {x0:p.x, y0:p.y, x1:p.x, y1:p.y};
 }
+
 function moveDrag(evt){
-  if(!view.drag || !view.drawMode) return;
+  if(!drag || !highlightMode || !pdfDoc) return;
   evt.preventDefault();
-  const p = getLocalPoint(evt);
-  view.drag.x2 = p.x; view.drag.y2 = p.y;
-  const c = clampRect(view.drag);
-  const left = Math.min(c.x1,c.x2);
-  const top = Math.min(c.y1,c.y2);
-  const width = Math.abs(c.x2-c.x1);
-  const height = Math.abs(c.y2-c.y1);
-  view.drag.el.style.left = left + "px";
-  view.drag.el.style.top = top + "px";
-  view.drag.el.style.width = width + "px";
-  view.drag.el.style.height = height + "px";
+  const p = getPos(evt);
+  drag.x1 = p.x; drag.y1 = p.y;
+  // redraw page then overlay current drag rect quickly
+  renderPage(currentPage).then(()=>{
+    const x = Math.min(drag.x0, drag.x1);
+    const y = Math.min(drag.y0, drag.y1);
+    const w = Math.abs(drag.x1 - drag.x0);
+    const h = Math.abs(drag.y1 - drag.y0);
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#ffe066";
+    ctx.fillRect(x,y,w,h);
+    ctx.restore();
+  });
 }
+
 function endDrag(evt){
-  if(!view.drag || !view.drawMode) return;
+  if(!drag || !highlightMode || !pdfDoc) return;
   evt.preventDefault();
+  const x = Math.min(drag.x0, drag.x1);
+  const y = Math.min(drag.y0, drag.y1);
+  const w = Math.abs(drag.x1 - drag.x0);
+  const h = Math.abs(drag.y1 - drag.y0);
+  drag = null;
 
-  const c = clampRect(view.drag);
-  const x = Math.min(c.x1,c.x2);
-  const y = Math.min(c.y1,c.y2);
-  const w = Math.abs(c.x2-c.x1);
-  const h = Math.abs(c.y2-c.y1);
+  if(w < 6 || h < 6) { renderPage(currentPage); return; }
 
-  // remove drag box
-  if(view.drag.el && view.drag.el.parentNode) view.drag.el.parentNode.removeChild(view.drag.el);
-  view.drag = null;
+  const hls = getHighlights(currentPage);
+  hls.push({x,y,w,h});
+  setHighlights(currentPage, hls);
 
-  // ignore tiny rect
-  if(w < 12 || h < 12) return;
+  logEvent("PDF","HIGHLIGHT_ADD",{page: currentPage, rect:{x,y,w,h}});
+  saveState();
 
-  ensurePageBucket(view.page);
-  const id = Date.now().toString().slice(-6);
-  pdfStudy.pages[view.page].highlights.push({id, x, y, w, h, note:""});
-  savePdfStudyState();
-  drawHighlights();
+  renderPage(currentPage);
 }
 
-pdfStage.addEventListener("mousedown", startDrag);
-pdfStage.addEventListener("mousemove", moveDrag);
+// Mouse + Touch
+canvas.addEventListener("mousedown", startDrag);
+canvas.addEventListener("mousemove", moveDrag);
 window.addEventListener("mouseup", endDrag);
 
-pdfStage.addEventListener("touchstart", startDrag, {passive:false});
-pdfStage.addEventListener("touchmove", moveDrag, {passive:false});
-window.addEventListener("touchend", endDrag, {passive:false});
+canvas.addEventListener("touchstart", startDrag, {passive:false});
+canvas.addEventListener("touchmove", moveDrag, {passive:false});
+canvas.addEventListener("touchend", endDrag, {passive:false});
 
-/* Extract page text and push into Step 3 */
-async function extractPageTextToStep3(){
-  if(!pdfDoc) return;
-  const page = await pdfDoc.getPage(view.page);
-  const tc = await page.getTextContent();
-  const text = tc.items.map(i => i.str).join(" ").replace(/\s+/g," ").trim();
-
-  // Ensure we are in Step 3; if not, we don't force — we inject at cursor.
-  if(state.i !== 2){
-    // move to step 3 without breaking rules? we won't auto-override.
-    // We'll just paste into current answer with prefix, user decides.
-    answer.value = (answer.value||"") + "\n" + "[PDF PAGE TEXT] " + text.slice(0, 2000);
-    answer.dispatchEvent(new Event("input"));
-    statusMsg.innerHTML = `<span class="warn">تم إرسال النص داخل الـOutput الحالي. إذا تريد Step 3 استخدم OVERRIDE 3.</span>`;
-    return;
-  }
-  // Step 3 active:
-  answer.value = text.slice(0, 4000);
-  answer.dispatchEvent(new Event("input"));
-  statusMsg.innerHTML = `<span class="good">تم إدخال نص الصفحة في Step 3. الآن حوّله لحقائق خام (نقاط فقط).</span>`;
-}
-
-/* Export / Import full data */
-function exportAll(){
-  const payload = {
-    gnp: state,
-    pdfStudy,
-    meta: { exportedAt: new Date().toISOString() }
-  };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "gnp_pdf_study_export.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importAll(){
-  const inp = document.createElement("input");
-  inp.type = "file";
-  inp.accept = "application/json";
-  inp.onchange = async () => {
-    const f = inp.files && inp.files[0];
-    if(!f) return;
-    const txt = await f.text();
-    try{
-      const data = JSON.parse(txt);
-      if(data.gnp) { state = data.gnp; saveState(); }
-      if(data.pdfStudy) { pdfStudy = data.pdfStudy; savePdfStudyState(); }
-      renderAll();
-      // redraw highlights if pdf loaded
-      drawHighlights();
-      alert("تم الاستيراد.");
-    }catch(e){
-      alert("ملف الاستيراد غير صالح.");
-    }
-  };
-  inp.click();
-}
-
-function clearAll(){
-  if(!confirm("سيتم مسح (GNP + PDF Notes/Highlights). موافق؟")) return;
-  localStorage.removeItem("GNPv4_STATE");
-  localStorage.removeItem("PDF_STUDY_STATE");
-  state = {mode:"IDLE", i:-1, locked:true, startedAt:null, stepStartedAt:null, timeLeft:0, log:[]};
-  pdfStudy = {docName:"", pages:{}};
-  resetPdfStateOnly();
-  renderAll();
-}
-
-/* Restore PDF notes state even before loading a PDF */
-(function boot(){
-  // keep existing notes in localStorage (already loaded into pdfStudy)
-  // nothing else.
-})();
+// init
+setPdfUiEnabled(false);
+updatePdfLabels();
 </script>
 
 </body>
